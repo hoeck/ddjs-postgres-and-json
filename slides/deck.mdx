@@ -1,0 +1,135 @@
+import { Image, CodePane, Table, TableHeader, TableBody, TableRow, TableCell } from 'spectacle'
+
+# Postgres and JSON
+
+# ⚡⚡⚡ lightning talk ⚡⚡⚡
+
+---
+
+import pooh from './pooh.jpg';
+
+<div style={{height:'100%', display: 'flex', justifyContent: 'center'}}>
+  <Image src={pooh}  style={{height: '100%'}}/>
+</div>
+
+Notes: 3 things we might want to do with our JSON data
+
+why JSON ? beacuse json is everywhere and useful
+
+tired of mapping json to objects or the database tables
+
+javascript/typescript makes working with json easy
+
+from pretty old stuff - to contemporary stuff - to new awsome shitt
+
+---
+
+# Storing JSON
+
+* every database can do this for ages
+* JSON maps to text (except for JSONB)
+* Postgres zips automatically 😎
+* even MySQL has `COMPRESS` and `UNCOMPRESS`
+
+Notes: IVI curve sims - 50GB of sim frame data zipped down to 5Gb
+
+JSON vs JSONB
+
+JSONB is a binary format for efficient querying - slower to store than JSON but faster to access properties
+
+---
+
+# Storing JSON - example
+
+Postgres has a `JSON` type
+
+<CodePane language="sql">
+CREATE TABLE table_with_json (
+  id SERIAL PRIMARY KEY NOT NULL,
+  data JSON NOT NULL
+)
+</CodePane>
+
+*EZ*
+
+<CodePane language="javascript">
+  {"import 'node-postgres'\n\n" +
+  "const data = {foo: 'bar'} \n\n" +
+  "await client.query('INSERT INTO table_with_json (data) VALUES (1)', [data])"}
+</CodePane>
+
+-> 👊 simple-runtypes for type-safety of the json 👊
+
+Notes: node-postgres does the mapping already
+
+no type safety inside json but -> runtypes -> reason why I am okay storing json in databases
+
+same for select - you just get a json back, node-postgres does that transparently
+
+---
+
+# Working with JSON in SQL
+
+https://www.postgresql.org/docs/12/functions-json.html
+
+weird overall syntax and SQL type system
+
+<span style={{color: 'red'}}>this is wrong:</span>
+<CodePane language="sql">
+SELECT id FROM table WHERE data->'foo' = 'bar'
+</CodePane>
+
+<span style={{color: 'green'}}>this compiles:</span>
+<CodePane language="sql">
+SELECT id FROM table WHERE data->>'foo' = 'bar'
+</CodePane>
+
+Notes: in Postgres, JSON and all other types (text, int) are not compatible and must be casted manually
+
+many JSON functions are overloaded on input types
+
+and for each JSON / TEXT return type there are typically two separate functions with similar name like -> and ->>
+
+---
+
+Useful for migrations:
+
+<CodePane language="sql">
+{"update assemblies\n" +
+ "set body = jsonb_set(\n" +
+ "             jsonb_set_lax(\n" +
+ "               body::jsonb,\n" +
+ "               '{telescoping, innerTubeCenter}',\n" +
+ "               null,\n" +
+ "               true,\n" +
+ "               'delete_key'\n" +
+ "             ),\n" +
+ "             '{telescoping, innerTubeTop}',\n" +
+ "             '200'::jsonb\n" +
+ "           )\n" +
+ "where body #> '{telescoping, innerTubeCenter}' is not null;\n"}
+</CodePane>
+
+---
+
+Functions I have used so far:
+
+* `jsonb_pretty` - pretty print json
+* `jsonb_path_query` - get object at path
+* `jsonb_path_exists` - test for presence of path
+* `jsonb_set_lax` - create a new, modified json object
+* `#>` - path accessor function
+
+Notes: own weird path query language
+
+json can be made into jsonb easily
+
+now the good shit: json_agg
+
+---
+
+# Aggregate into JSON
+
+😲😲 `json_agg` 😲😲
+
+-> ran out of time 😐 and this was supposed to be a lightning talk anyway
